@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>最低賃金チェック（時給換算 + 固定残業代補助）</title>
+  <meta name="description" content="都道府県別最低賃金に対して時給換算で自動判定。固定残業〈時給〉が最低賃金×1.25を満たすかもチェック。2025年 地域別最低賃金一覧付き。">
+  <meta name="theme-color" content="#2563eb" />
+  <meta property="og:title" content="最低賃金チェック（時給換算 + 固定残業代補助）">
+  <meta property="og:description" content="都道府県別最低賃金に対して時給換算で自動判定。固定残業〈時給〉が最低賃金×1.25を満たすかもチェック。2025年 地域別最低賃金一覧付き。">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="./assets/style.css?v=1.0.0">
+</head>
+<body>
+<div class="wrap">
+  <h1>最低賃金チェック（時給換算）</h1>
+  <div class="sub">都道府県別最低賃金に対して時給換算で判定。月給の場合は固定残業〈時給〉が「最低賃金×1.25」を満たすかもチェックします。<br><span class="hint">※ 判定基準日は本日で自動適用（発効日前は改定前額、以後は新額）</span></div>
+
+  <!-- 入力ブロック -->
+  <div class="card">
+    <div class="step"><span class="step-num">1</span>基本情報</div>
+
+    <!-- 縦一列 -->
+    <div class="form-vertical" style="margin-top:8px">
+      <div>
+        <label for="pref">都道府県</label>
+        <select id="pref"></select>
+      </div>
+      <div>
+        <label for="payType">給与形態</label>
+        <select id="payType">
+          <option value="hourly">時給</option>
+          <option value="daily">日給</option>
+          <option value="monthly">月給</option>
+        </select>
+      </div>
+      <div>
+        <label for="amount">給与額</label>
+        <input id="amount" type="number" inputmode="decimal" min="0" placeholder="例）1200 / 9000 / 240000" />
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="step"><span class="step-num">2</span>勤務時間形態</div>
+
+    <!-- 時給：追加不要 -->
+    <div class="row" id="block-hourly" hidden style="margin:8px 0">
+      <span class="pill">時給</span><span class="hint">追加の入力は不要です。</span>
+    </div>
+
+    <!-- 日給：実働時間 -->
+    <div id="block-daily" hidden style="margin-top:8px">
+      <div class="grid">
+        <div>
+          <label for="dailyHours">1日の<strong>実働時間</strong>（h）</label>
+          <input id="dailyHours" type="number" inputmode="decimal" min="0" step="0.01" placeholder="例）8" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 月給：まず「勤務時間方式」をプルダウンで選択 → 選ぶまで入力欄は出さない -->
+    <div id="block-monthly" hidden style="margin-top:8px">
+      <div class="form-vertical">
+        <div>
+          <label for="mModeSelect">勤務時間方式</label>
+          <select id="mModeSelect">
+            <option value="">— 方式を選択 —</option>
+            <option value="total">1か月の総労働時間で入力</option>
+            <option value="compose">勤務日数＋1日の実働時間で入力</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 選択に応じて片方だけ表示（初期は両方とも非表示 .hide） -->
+      <div class="grid hide" id="m-total" style="margin-top:10px">
+        <div>
+          <label for="monthlyTotal">1か月の<strong>総労働時間</strong>（h）</label>
+          <input id="monthlyTotal" type="number" inputmode="decimal" min="0" step="0.01" placeholder="例）160（=20日×8h など）" />
+        </div>
+      </div>
+
+      <div class="grid hide" id="m-compose" style="margin-top:10px">
+        <div>
+          <label for="workDays">1か月の<strong>勤務日数</strong>（日）</label>
+          <input id="workDays" type="number" inputmode="decimal" min="0" step="0.01" placeholder="例）20" />
+        </div>
+        <div>
+          <label for="hoursPerDay"><strong>1日の実働時間</strong>（h）</label>
+          <input id="hoursPerDay" type="number" inputmode="decimal" min="0" step="0.01" placeholder="例）8" />
+        </div>
+      </div>
+
+      <details style="margin-top:12px">
+        <summary><strong>固定残業代（みなし残業）を入力する</strong> <span class="pill">任意・月給向け</span></summary>
+        <div class="note" style="margin-top:10px">
+          本体の最低賃金比較は<strong>基礎賃金</strong>（＝月給－固定残業代）を所定時間で割った時給で行います。<br>
+          さらに固定残業の〈時給〉が<strong>最低賃金×1.25</strong>（時間外25%）を満たすかを判定します。
+        </div>
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label for="hasFOT">固定残業代を含む</label>
+            <select id="hasFOT">
+              <option value="no" selected>含まない</option>
+              <option value="yes">含む（下の内訳を入力）</option>
+            </select>
+          </div>
+          <div>
+            <label for="fotAmount">固定残業代の金額（円/月）</label>
+            <input id="fotAmount" type="number" inputmode="decimal" min="0" step="1" placeholder="例）30000" disabled />
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label for="fotHours">固定残業の想定時間（h/月）</label>
+            <input id="fotHours" type="number" inputmode="decimal" min="0" step="0.1" placeholder="例）20" disabled />
+          </div>
+          <div>
+            <label>判定基準（自動）</label>
+            <input value="最低賃金 × 1.25 と比較" disabled />
+            <div class="hint">割増率は1.25固定（時間外25%）</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="calcBtn">時給換算して判定</button>
+      <span class="hint">Enterでも計算できます</span>
+    </div>
+  </div>
+
+  <!-- 出力ブロック -->
+  <div class="card">
+    <div class="result" id="resultBox">
+      <span id="judgeBadge" class="badge neutral">未計算</span>
+      <div style="display:grid;gap:6px">
+        <div><strong>換算時給（比較対象）：</strong> <span id="hourlyOut" class="mono">—</span> 円</div>
+        <div><strong>適用最低賃金：</strong> <span id="mwOut" class="mono">—</span> 円 <span id="mwNote" class="hint"></span></div>
+        <div id="mwFutureRow" class="hint hide">※ <span id="mwEffDate" class="mono"></span> 以降の最低賃金：<span id="mwFuture" class="mono"></span> 円</div>
+        <div class="hint hide" id="deltaRow">最低賃金との差：<span id="deltaOut" class="mono"></span> 円</div>
+        <div id="fotCheckRow" class="note hide"><span class="section-title">固定残業代のチェック（時給基準）</span>
+          <div id="fotCheckText" class="mono"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2025年 地域別最低賃金 一覧 -->
+  <div class="card">
+    <div class="section-title">地域別最低賃金（2025）一覧</div>
+    <div class="hint" style="margin-bottom:8px">並び順：厚生労働省の公表順（北海道→沖縄）／「割増賃金額」は<strong>最低賃金×1.25</strong></div>
+    <div class="table-wrap">
+      <table class="tbl" id="mwTable">
+        <thead>
+          <tr>
+            <th>都道府県</th>
+            <th>最低賃金額</th>
+            <th>割増賃金額</th>
+            <th>改定日</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="muted" style="font-size:.82rem">© Minimum Wage Checker (JP, 2025)</div>
+</div>
+
+<script src="./assets/app.js?v=1.0.0" defer></script>
+</body>
+</html>
